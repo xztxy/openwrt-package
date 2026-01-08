@@ -1,0 +1,49 @@
+name: Sync Upstream
+
+on:
+  schedule:
+    - cron: '0 3 * * *'   # 每天凌晨 3 点运行
+  workflow_dispatch:       # 允许手动触发
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        branch: [
+          LEDE,
+          passwall,
+          helloworld,
+          adguard,
+          Xwrt,
+          Theme2,
+          Theme1,
+          Official,
+          Mt798x,
+          Lienol,
+          Immortalwrt
+        ]
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.branch }}
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream and fetch
+        run: |
+          git remote add upstream https://github.com/wydy/openwrt-package.git
+          git fetch upstream ${{ matrix.branch }}
+
+      - name: Merge upstream changes
+        run: |
+          git merge upstream/${{ matrix.branch }} --allow-unrelated-histories || true
+
+      - name: Push to origin
+        run: |
+          git push origin ${{ matrix.branch }}
